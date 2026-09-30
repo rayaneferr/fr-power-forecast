@@ -26,8 +26,8 @@ at gate closure on day D.
 ## Roadmap
 
 - [x] **v0.1** Evaluation metrics (MAE, rMAE, pinball, CRPS, coverage, Diebold-Mariano)
-- [ ] **v0.2** Data pipeline ([details](docs/data.md)): ENTSO-E prices, load and wind/solar
-      forecasts, Open-Meteo weather, DST-safe hourly alignment
+- [x] **v0.2** Data pipeline ([details](docs/data.md)): Energy-Charts prices, RTE load
+      forecast, Open-Meteo weather (keyless), optional ENTSO-E, DST-safe hourly alignment
 - [ ] **v0.3** Baselines: seasonal naive, LEAR, LightGBM
 - [ ] **v0.4** Rolling-origin backtest engine
 - [ ] **v0.5** Foundation models, zero-shot (Chronos-2, TimesFM, Moirai)
