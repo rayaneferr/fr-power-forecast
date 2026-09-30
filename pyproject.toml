@@ -1,0 +1,32 @@
+[project]
+name = "fr-power-forecast"
+version = "0.1.0"
+description = "Benchmarking time series foundation models against specialised models on French day-ahead electricity prices."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Rayane" }]
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.13",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "NPY"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
