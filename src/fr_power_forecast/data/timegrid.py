@@ -6,6 +6,8 @@ Following common EPF practice, the missing hour 02:00 is filled with the mean of
 and the two 02:00 hours of the October day are averaged.
 """
 
+from collections.abc import Iterator
+
 import numpy as np
 import pandas as pd
 
@@ -61,3 +63,18 @@ def from_daily_matrix(matrix: pd.DataFrame, name: str | None = None) -> pd.Serie
         raise ValueError("matrix index must contain consecutive days")
     values = matrix.to_numpy(dtype=float)[rows, index.hour]
     return pd.Series(values, index=index.tz_convert("UTC"), name=name)
+
+
+def yearly_chunks(start: pd.Timestamp, end: pd.Timestamp) -> Iterator[tuple]:
+    """Split ``[start, end)`` into consecutive chunks of at most one year."""
+    current = start
+    while current < end:
+        upper = min(current + pd.DateOffset(years=1), end)
+        yield current, upper
+        current = upper
+
+
+def check_utc(*timestamps: pd.Timestamp) -> None:
+    for ts in timestamps:
+        if ts.tz is None or ts.utcoffset() != pd.Timedelta(0):
+            raise ValueError(f"expected a UTC timestamp, got {ts}")

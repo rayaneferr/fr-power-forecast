@@ -14,11 +14,14 @@ hourly values so that the whole history shares one grid.
 import re
 import time
 import xml.etree.ElementTree as ET
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 
 import httpx
 import numpy as np
 import pandas as pd
+
+from fr_power_forecast.data.http import get_with_retries
+from fr_power_forecast.data.timegrid import check_utc, yearly_chunks
 
 BASE_URL = "https://web-api.tp.entsoe.eu/api"
 FRANCE = "10YFR-RTE------C"
@@ -121,15 +124,6 @@ def _combine(parts: list[pd.Series], name: str) -> pd.Series:
     return series.rename(name)
 
 
-def yearly_chunks(start: pd.Timestamp, end: pd.Timestamp) -> Iterator[tuple]:
-    """Split ``[start, end)`` into chunks of at most one year, the API's maximum range."""
-    current = start
-    while current < end:
-        upper = min(current + pd.DateOffset(years=1), end)
-        yield current, upper
-        current = upper
-
-
 class EntsoeClient:
     def __init__(
         self,
@@ -147,24 +141,24 @@ class EntsoeClient:
         self._sleep = sleep
 
     def _get(self, params: dict) -> bytes:
-        for attempt in range(self._max_retries + 1):
-            response = self._http.get(BASE_URL, params={"securityToken": self._api_key, **params})
-            retryable = response.status_code == 429 or response.status_code >= 500
-            if retryable and attempt < self._max_retries:
-                self._sleep(2**attempt)
-                continue
-            # Errors such as "no data" come back as an XML acknowledgement with status 400.
-            acknowledgement = b"Acknowledgement_MarketDocument" in response.content
-            if response.status_code == 400 and acknowledgement:
-                return response.content
-            response.raise_for_status()
+        response = get_with_retries(
+            self._http,
+            BASE_URL,
+            {"securityToken": self._api_key, **params},
+            max_retries=self._max_retries,
+            sleep=self._sleep,
+        )
+        # Errors such as "no data" come back as an XML acknowledgement with status 400.
+        acknowledgement = b"Acknowledgement_MarketDocument" in response.content
+        if response.status_code == 400 and acknowledgement:
             return response.content
-        raise AssertionError("unreachable")
+        response.raise_for_status()
+        return response.content
 
     def _query(
         self, params: dict, start: pd.Timestamp, end: pd.Timestamp, value_tag: str
     ) -> list[tuple[dict, pd.Series]]:
-        _check_utc(start, end)
+        check_utc(start, end)
         parsed = []
         for lower, upper in yearly_chunks(start, end):
             window = {
@@ -200,9 +194,3 @@ class EntsoeClient:
             parts = [s for attrs, s in parsed if attrs["psr_type"] == code]
             columns[f"{label}_forecast"] = _combine(parts, f"{label}_forecast")
         return pd.DataFrame(columns)
-
-
-def _check_utc(*timestamps: pd.Timestamp) -> None:
-    for ts in timestamps:
-        if ts.tz is None or ts.utcoffset() != pd.Timedelta(0):
-            raise ValueError(f"expected a UTC timestamp, got {ts}")
