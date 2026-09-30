@@ -38,3 +38,36 @@ Not a benchmark result: a single calibration on 2021-2024, no recalibration, tes
 
 The LightGBM 10-90 % interval covers 62 % of the 2025 prices against 80 % nominal, which is
 what the conformal calibration of v0.6 is meant to fix.
+
+## Foundation models (zero-shot)
+
+Optional dependencies: `uv sync --extra tsfm` (PyTorch, Chronos, TimesFM). The models are never
+trained or fine-tuned on this dataset. To forecast day `d` they read `context_days` (336 by
+default, 8,064 hours) of hourly prices ending on day `d - 1`; with `exog`, also the same window of
+the exogenous forecasts and their values on day `d` as known future covariates. The point forecast
+is the median of the nine deciles.
+
+| Model | Checkpoint | Weights licence | Covariates |
+|---|---|---|---|
+| `Chronos2` | `amazon/chronos-2` | Apache-2.0 | past and future covariates, in context |
+| `TimesFM3` | `google/timesfm-3.0-pytorch` | non-commercial, non-production | past and future covariates |
+
+```bash
+uv run fr-power-forecast backtest --model chronos2 --start 2022-01-01          # prices only
+uv run fr-power-forecast backtest --model chronos2 --exog --start 2022-01-01   # + load, wind, solar
+```
+
+Zero-shot models have no calibration: the backtest forecasts all test days in one batch and
+leaves `calibrated_until` empty. Getting results for new days only needs a new forecast run
+(`--resume`), not a recalibration.
+
+Pitfalls handled in the wrappers:
+
+- TimesFM clips its forecasts at zero by default (`make_positive=True`), which would erase
+  negative prices; it is disabled.
+- On macOS, the OpenMP runtimes of LightGBM (Homebrew libomp) and PyTorch crash when loaded in
+  the same process, so LightGBM is imported only when a LightGBM model is fitted.
+
+Caveat: these models were pretrained on large public corpora. The test period (2022-2026) is
+later than the EPF benchmark datasets of Lago et al. (2011-2016), but for models released in
+2025-2026 overlap between their pretraining data and the test prices cannot be ruled out.

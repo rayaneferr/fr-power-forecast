@@ -63,7 +63,8 @@ at gate closure on day D.
       forecast, Open-Meteo weather (keyless), optional ENTSO-E, DST-safe hourly alignment
 - [x] **v0.3** Baselines ([details](docs/models.md)): seasonal naive, LEAR, LightGBM
 - [x] **v0.4** Rolling-origin backtest engine ([results](docs/backtest.md))
-- [ ] **v0.5** Foundation models, zero-shot (Chronos-2, TimesFM, Moirai)
+- [ ] **v0.5** Foundation models, zero-shot (Chronos-2, TimesFM 3.0, Moirai): wrappers done,
+      backtests pending
 - [ ] **v0.6** Conformal calibration of the quantile forecasts
 - [ ] **v0.7** Battery arbitrage backtest (EUR value of forecasts)
 - [ ] **v0.8** Fine-tuned Chronos-2 on EPEX-FR
