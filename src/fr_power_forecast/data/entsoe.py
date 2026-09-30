@@ -154,7 +154,8 @@ class EntsoeClient:
                 self._sleep(2**attempt)
                 continue
             # Errors such as "no data" come back as an XML acknowledgement with status 400.
-            if response.status_code == 400 and b"Acknowledgement_MarketDocument" in response.content:
+            acknowledgement = b"Acknowledgement_MarketDocument" in response.content
+            if response.status_code == 400 and acknowledgement:
                 return response.content
             response.raise_for_status()
             return response.content
