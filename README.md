@@ -29,7 +29,7 @@ at gate closure on day D.
 - [x] **v0.2** Data pipeline ([details](docs/data.md)): Energy-Charts prices, RTE load
       forecast, Open-Meteo weather (keyless), optional ENTSO-E, DST-safe hourly alignment
 - [x] **v0.3** Baselines ([details](docs/models.md)): seasonal naive, LEAR, LightGBM
-- [ ] **v0.4** Rolling-origin backtest engine
+- [x] **v0.4** Rolling-origin backtest engine ([results](docs/backtest.md))
 - [ ] **v0.5** Foundation models, zero-shot (Chronos-2, TimesFM, Moirai)
 - [ ] **v0.6** Conformal calibration of the quantile forecasts
 - [ ] **v0.7** Battery arbitrage backtest (EUR value of forecasts)
