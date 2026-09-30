@@ -41,3 +41,9 @@ testpaths = ["tests"]
 
 [project.scripts]
 fr-power-forecast = "fr_power_forecast.cli:main"
+
+[project.optional-dependencies]
+tsfm = [
+    "chronos-forecasting>=2.3",
+    "timesfm[torch]>=3.0",
+]

@@ -39,6 +39,7 @@ class Forecaster(ABC):
     """
 
     name: str
+    zero_shot = False  # True for models that are never fitted on this dataset
 
     def fit(self, panel: pd.DataFrame, days) -> "Forecaster":
         return self
@@ -46,6 +47,12 @@ class Forecaster(ABC):
     @abstractmethod
     def predict(self, panel: pd.DataFrame, days) -> pd.DataFrame:
         """(len(days), 24) point forecasts indexed by day."""
+
+    def predict_with_quantiles(self, panel: pd.DataFrame, days):
+        """Point forecasts and, for models with ``quantiles``, the (days, 24, n) quantiles."""
+        point = self.predict(panel, days)
+        has_quantiles = bool(getattr(self, "quantiles", ()))
+        return point, self.predict_quantiles(panel, days) if has_quantiles else None
 
     @staticmethod
     def _frame(values: np.ndarray, days: pd.DatetimeIndex) -> pd.DataFrame:

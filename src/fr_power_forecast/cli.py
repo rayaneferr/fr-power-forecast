@@ -15,6 +15,8 @@ from fr_power_forecast.data.dataset import (
 )
 from fr_power_forecast.data.entsoe import EntsoeClient
 from fr_power_forecast.models import LEAR, LightGBM, SeasonalNaive, daily_panel
+from fr_power_forecast.models.lear import DEFAULT_EXOG
+from fr_power_forecast.models.tsfm import Chronos2, TimesFM3
 
 DATASET = Path("data/processed/epex_fr_hourly.parquet")
 RESULTS = Path("results")
@@ -33,7 +35,10 @@ def _make_model(args):
         return SeasonalNaive()
     if args.model == "lear":
         return LEAR(window_days=args.window_days)
-    return LightGBM(window_days=args.window_days, quantiles=tuple(args.quantiles))
+    if args.model == "lightgbm":
+        return LightGBM(window_days=args.window_days, quantiles=tuple(args.quantiles))
+    zero_shot = {"chronos2": Chronos2, "timesfm3": TimesFM3}[args.model]
+    return zero_shot(context_days=args.context_days, exog=DEFAULT_EXOG if args.exog else ())
 
 
 def _result_name(model, recalibrate_every: int) -> str:
@@ -59,6 +64,10 @@ def run_backtest(args) -> None:
         result = bt.extend(previous, result)
     bt.save(result, directory)
     timings = result.timings
+    if model.zero_shot:
+        seconds = timings["predict_seconds"].sum() / timings["n_days"].sum()
+        print(f"{len(days)} days written to {directory}; zero-shot, {seconds:.3f} s per day")
+        return
     print(
         f"{len(days)} days written to {directory}; {len(timings)} recalibrations, "
         f"mean fit {timings['fit_seconds'].mean():.2f} s, "
@@ -103,12 +112,18 @@ def main(argv: list[str] | None = None) -> None:
     build.add_argument("--out", type=Path, default=DATASET)
 
     backtest = commands.add_parser("backtest", help="rolling-origin backtest of one model")
-    backtest.add_argument("--model", choices=["naive", "lear", "lightgbm"], required=True)
+    backtest.add_argument(
+        "--model", choices=["naive", "lear", "lightgbm", "chronos2", "timesfm3"], required=True
+    )
     backtest.add_argument("--start", type=_day, required=True, help="first test day")
     backtest.add_argument("--end", type=_day, help="exclusive; default: after the last price")
     backtest.add_argument("--recalibrate-every", type=int, default=1, help="days")
     backtest.add_argument("--window-days", type=int, default=1456)
     backtest.add_argument("--quantiles", type=float, nargs="*", default=[], help="lightgbm only")
+    backtest.add_argument("--context-days", type=int, default=336, help="foundation models only")
+    backtest.add_argument(
+        "--exog", action="store_true", help="foundation models: use the exogenous forecasts"
+    )
     backtest.add_argument("--n-jobs", type=int, default=1)
     backtest.add_argument("--resume", action="store_true", help="only forecast new days")
     backtest.add_argument("--dataset", type=Path, default=DATASET)

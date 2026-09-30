@@ -1,5 +1,8 @@
 """Rolling-origin backtest and evaluation (Lago et al., 2021).
 
+Zero-shot models are never fitted: they forecast all test days in one batch and their
+``calibrated_until`` is empty.
+
 Test days are walked forward in blocks of ``recalibrate_every`` days. Before each block the model
 is recalibrated on every day before the block, then it forecasts the days of the block. Each
 forecast records the last day of its calibration data (``calibrated_until``), so every result
@@ -34,20 +37,21 @@ def _quantile_column(q: float) -> str:
 def _run_block(model: Forecaster, panel: pd.DataFrame, block: pd.DatetimeIndex):
     model = copy.deepcopy(model)
     train = panel.index[panel.index < block[0]]
+    calibrated_until = pd.NaT if model.zero_shot else train[-1]
     start = time.perf_counter()
-    model.fit(panel, train)
+    if not model.zero_shot:
+        model.fit(panel, train)
     fitted = time.perf_counter()
-    point = model.predict(panel, block)
-    quantiles = model.predict_quantiles(panel, block) if getattr(model, "quantiles", ()) else None
+    point, quantiles = model.predict_with_quantiles(panel, block)
     predicted = time.perf_counter()
 
     frame = point.stack(future_stack=True).rename("forecast").to_frame()
     if quantiles is not None:
         for i, q in enumerate(model.quantiles):
             frame[_quantile_column(q)] = quantiles[:, :, i].ravel()
-    frame["calibrated_until"] = train[-1]
+    frame["calibrated_until"] = calibrated_until
     timing = {
-        "calibrated_until": train[-1],
+        "calibrated_until": calibrated_until,
         "first_day": block[0],
         "n_days": len(block),
         "fit_seconds": fitted - start,
@@ -69,9 +73,11 @@ def rolling_backtest(
         raise ValueError("no test days")
     if test_days[0] <= panel.index[0]:
         raise ValueError("the first test day needs at least one day of history")
-    blocks = [
-        test_days[i : i + recalibrate_every] for i in range(0, len(test_days), recalibrate_every)
-    ]
+    if model.zero_shot:
+        blocks, n_jobs = [test_days], 1
+    else:
+        step = recalibrate_every
+        blocks = [test_days[i : i + step] for i in range(0, len(test_days), step)]
 
     if n_jobs == 1:
         results = [_run_block(model, panel, block) for block in blocks]
