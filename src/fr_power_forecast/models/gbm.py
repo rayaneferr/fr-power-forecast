@@ -5,9 +5,11 @@ of d-1, d-2 and d-7, the level and range of the day d-1 prices, and for each exo
 its same-hour value on days d, d-1 and d-7 plus its daily mean on day d. Missing features are
 left to LightGBM's native NaN handling. The point model minimises the absolute error; quantile
 models are trained on request for probabilistic forecasts.
+
+LightGBM is imported lazily: on macOS its OpenMP runtime (Homebrew libomp) and PyTorch's crash
+when both are loaded in one process, which would break the foundation models.
 """
 
-import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
@@ -72,8 +74,10 @@ class LightGBM(Forecaster):
             columns[f"{var}_lag7"] = _per_hour(lagged(panel, var, 7, days))
         return pd.DataFrame(columns)
 
-    def _model(self, objective: str, **extra) -> lgb.LGBMRegressor:
-        return lgb.LGBMRegressor(objective=objective, **extra, **self.params)
+    def _model(self, objective: str, **extra):
+        import lightgbm
+
+        return lightgbm.LGBMRegressor(objective=objective, **extra, **self.params)
 
     def fit(self, panel: pd.DataFrame, days) -> "LightGBM":
         days = as_days(days)[-self.window_days :]
