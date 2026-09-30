@@ -16,6 +16,39 @@ LightGBM, N-HiTS) on the EPEX-FR day-ahead market, along three axes:
 
 Results are broken down by market regime (pre-2022, 2022 energy crisis, negative-price hours).
 
+## Results so far
+
+Rolling-origin backtest over 1,734 days (January 2022 to September 2026), each day forecast with
+the information available at gate closure the day before. Foundation models come next (v0.5).
+
+| Period | Days | Seasonal naive MAE | LEAR MAE | LEAR rMAE |
+|---|---:|---:|---:|---:|
+| 2022-2026 | 1,734 | 30.37 | **20.09** | **0.662** |
+| 2022 (energy crisis) | 365 | 52.97 | **35.53** | **0.671** |
+| 2023-2026 | 1,369 | 24.34 | **15.97** | **0.656** |
+
+MAE in EUR/MWh; rMAE is the MAE relative to the naive benchmark. LEAR is recalibrated every day;
+the gain over naive is significant in every period (Diebold-Mariano p < 1e-15). Both models were
+last recalibrated on data up to **2026-09-29**: later days need a recalibration
+(`fr-power-forecast backtest --resume`) to be included.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/monthly_mae_dark.png">
+  <img alt="Monthly MAE of the seasonal naive and LEAR forecasts from 2022 to 2026. LEAR stays below naive in almost every month; both peak during the 2022 energy crisis." src="docs/img/monthly_mae_light.png">
+</picture>
+
+LEAR cuts the error by about a third in both regimes: the absolute MAE drops with price levels
+after 2022, the relative gain does not.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/sample_week_dark.png">
+  <img alt="Hourly actual prices and LEAR and naive forecasts for the week of 4 to 10 May 2026. LEAR tracks the daily shape, including the midday dip to zero and negative prices on the weekend, where naive overshoots." src="docs/img/sample_week_light.png">
+</picture>
+
+Negative-price hours around solar noon remain the hardest case for both models. LightGBM is
+implemented but not backtested yet. Full protocol and cost figures: [docs/backtest.md](docs/backtest.md).
+Figures are regenerated with `uv run --group plots python scripts/plot_results.py`.
+
 ## Protocol
 
 The evaluation follows the best practices of
