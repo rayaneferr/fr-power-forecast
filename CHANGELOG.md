@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-09-30
+
+### Added
+- `backtest.rolling_backtest`: rolling-origin backtest, recalibrated every `recalibrate_every`
+  days on all earlier days, blocks run in parallel. Every forecast records `calibrated_until`,
+  the last day of its calibration data, and every recalibration its fit and predict time.
+- `backtest.evaluate`: MAE, rMAE, RMSE, sMAPE, Diebold-Mariano p-value against the naive model,
+  and pinball loss and interval coverage for quantile forecasts, on the days common to all models,
+  optionally restricted to a date range.
+- `backtest.freshness`: last forecast day and last recalibration per model, and how many days of
+  price data are not backtested yet.
+- `fr-power-forecast backtest` (with `--resume` to forecast only new days) and
+  `fr-power-forecast evaluate`, which warns when a recalibration is needed for up-to-date results.
+- `docs/backtest.md`: protocol and naive and LEAR results from January 2022 to September 2026
+  (LEAR rMAE 0.662 with daily recalibration). LightGBM is not backtested yet.
+
 ## [0.3.0] - 2026-09-30
 
 ### Added
@@ -37,6 +53,7 @@ All notable changes to this project are documented here. The format follows
 - `metrics` module: MAE, RMSE, sMAPE, rMAE, pinball loss, CRPS from quantiles,
   interval coverage and width, multivariate one-sided Diebold-Mariano test.
 
+[0.4.0]: https://github.com/rayaneferr/fr-power-forecast/releases/tag/v0.4.0
 [0.3.0]: https://github.com/rayaneferr/fr-power-forecast/releases/tag/v0.3.0
 [0.2.0]: https://github.com/rayaneferr/fr-power-forecast/releases/tag/v0.2.0
 [0.1.0]: https://github.com/rayaneferr/fr-power-forecast/releases/tag/v0.1.0

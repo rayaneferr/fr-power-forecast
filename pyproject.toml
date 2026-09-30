@@ -1,6 +1,6 @@
 [project]
 name = "fr-power-forecast"
-version = "0.3.0"
+version = "0.4.0"
 description = "Benchmarking time series foundation models against specialised models on French day-ahead electricity prices."
 readme = "README.md"
 license = "MIT"
