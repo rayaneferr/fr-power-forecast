@@ -28,7 +28,7 @@ at gate closure on day D.
 - [x] **v0.1** Evaluation metrics (MAE, rMAE, pinball, CRPS, coverage, Diebold-Mariano)
 - [x] **v0.2** Data pipeline ([details](docs/data.md)): Energy-Charts prices, RTE load
       forecast, Open-Meteo weather (keyless), optional ENTSO-E, DST-safe hourly alignment
-- [ ] **v0.3** Baselines: seasonal naive, LEAR, LightGBM
+- [x] **v0.3** Baselines ([details](docs/models.md)): seasonal naive, LEAR, LightGBM
 - [ ] **v0.4** Rolling-origin backtest engine
 - [ ] **v0.5** Foundation models, zero-shot (Chronos-2, TimesFM, Moirai)
 - [ ] **v0.6** Conformal calibration of the quantile forecasts
@@ -39,7 +39,7 @@ at gate closure on day D.
 ## Development
 
 ```bash
-uv sync
+uv sync                # macOS: LightGBM needs `brew install libomp`
 uv run pytest
 uv run ruff check && uv run ruff format --check
 ```
