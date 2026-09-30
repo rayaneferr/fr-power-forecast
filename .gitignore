@@ -8,5 +8,5 @@ build/
 *.egg-info/
 
 # Raw and processed data are fetched, never committed
-data/
+/data/
 .env
