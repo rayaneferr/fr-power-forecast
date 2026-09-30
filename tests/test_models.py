@@ -6,10 +6,6 @@ from fr_power_forecast.metrics import mae
 from fr_power_forecast.models import LEAR, LightGBM, SeasonalNaive, daily_panel
 from fr_power_forecast.models.base import lagged
 
-# The synthetic load forecast has one value per day, so its 24 hourly regressors are collinear
-# and the LARS path warns about degenerate active sets.
-pytestmark = pytest.mark.filterwarnings("ignore::sklearn.exceptions.ConvergenceWarning")
-
 FAST_GBM = {"n_estimators": 50, "num_leaves": 15}
 
 
@@ -19,6 +15,7 @@ def synthetic_panel(n_days: int = 400, seed: int = 0) -> pd.DataFrame:
     days = pd.date_range("2024-01-01", periods=n_days, freq="D", name="date")
     shape = 10 * np.sin(np.arange(24) / 24 * 2 * np.pi)
     load = 50_000 + 8_000 * rng.standard_normal((n_days, 1)) + 2_000 * shape / 10
+    load += 500 * rng.standard_normal((n_days, 24))  # hourly regressors must not be collinear
     level = np.zeros(n_days)
     for i in range(1, n_days):
         level[i] = 0.7 * level[i - 1] + 5 * rng.standard_normal()

@@ -59,6 +59,9 @@ class LEAR(Forecaster):
             )
         x, dummies, y = x[complete], dummies[complete], y[complete]
 
+        # Constant regressors (e.g. night-time solar radiation) only destabilise the LARS path.
+        self._varying = np.ptp(x, axis=0) > 0
+        x = x[:, self._varying]
         self._x_scaler = AsinhScaler().fit(x)
         self._y_scaler = AsinhScaler().fit(y)
         design = np.hstack([self._x_scaler.transform(x), dummies])
@@ -67,7 +70,7 @@ class LEAR(Forecaster):
         self._models = []
         for hour in HOURS:
             alpha = LassoLarsIC(criterion="aic", max_iter=2500).fit(design, target[:, hour]).alpha_
-            self._models.append(Lasso(alpha=alpha, max_iter=2500).fit(design, target[:, hour]))
+            self._models.append(Lasso(alpha=alpha, max_iter=10_000).fit(design, target[:, hour]))
         return self
 
     def predict(self, panel: pd.DataFrame, days) -> pd.DataFrame:
@@ -76,7 +79,8 @@ class LEAR(Forecaster):
         complete = np.isfinite(x).all(axis=1)
         out = np.full((len(days), 24), np.nan)
         if complete.any():
-            design = np.hstack([self._x_scaler.transform(x[complete]), dummies[complete]])
+            x = x[complete][:, self._varying]
+            design = np.hstack([self._x_scaler.transform(x), dummies[complete]])
             z = np.column_stack([model.predict(design) for model in self._models])
             out[complete] = self._y_scaler.inverse(z)
         return self._frame(out, days)
