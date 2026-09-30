@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-09-30
+
+### Added
+- `models.daily_panel`: reshape the hourly dataset into a (day x (variable, hour)) panel.
+- `models.Forecaster`: shared `fit` / `predict` interface with a day-ahead information set
+  (prices up to d-1, exogenous forecasts up to d), enforced by a tampering test.
+- `models.SeasonalNaive`: the naive benchmark of Lago et al. (2021).
+- `models.LEAR`: per-hour LASSO with asinh scaling and AIC-selected penalty.
+- `models.LightGBM`: single model over all hours, L1 objective, optional quantile models.
+- `docs/models.md`: model descriptions and a first sanity check on 2025.
+
 ## [0.2.0] - 2026-09-30
 
 ### Added
@@ -26,5 +37,6 @@ All notable changes to this project are documented here. The format follows
 - `metrics` module: MAE, RMSE, sMAPE, rMAE, pinball loss, CRPS from quantiles,
   interval coverage and width, multivariate one-sided Diebold-Mariano test.
 
+[0.3.0]: https://github.com/rayaneferr/fr-power-forecast/releases/tag/v0.3.0
 [0.2.0]: https://github.com/rayaneferr/fr-power-forecast/releases/tag/v0.2.0
 [0.1.0]: https://github.com/rayaneferr/fr-power-forecast/releases/tag/v0.1.0
