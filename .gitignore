@@ -10,3 +10,4 @@ build/
 # Raw and processed data are fetched, never committed
 /data/
 .env
+results/
