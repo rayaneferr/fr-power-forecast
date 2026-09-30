@@ -69,7 +69,8 @@ def test_build_dataset_joins_all_sources():
             return pd.DataFrame({"solar_forecast": 1.0, "wind_onshore_forecast": 2.0}, index=index)
 
     start, end = utc("2025-01-01"), utc("2025-01-02")
-    frame = dataset.build_dataset(start, end, FakeEntsoe(), weather_source=None)
+    sources = dataset.entsoe_sources(FakeEntsoe())
+    frame = dataset.build_dataset(start, end, sources, weather_source=None)
     assert list(frame.columns) == [
         "price",
         "load_forecast",

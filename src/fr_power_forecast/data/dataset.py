@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from fr_power_forecast.data import energy_charts, rte
 from fr_power_forecast.data.entsoe import EntsoeClient
 from fr_power_forecast.data.weather import fetch_weather
 
@@ -83,20 +84,36 @@ def fetch_cached(
     return pd.concat(chunks).sort_index()
 
 
+def public_sources() -> dict[str, Fetcher]:
+    """Sources that need no API key: Energy-Charts prices and the RTE load forecast."""
+    return {
+        "energy_charts_price": energy_charts.fetch_day_ahead_prices,
+        "rte_load_forecast": rte.fetch_load_forecast,
+    }
+
+
+def entsoe_sources(client: EntsoeClient) -> dict[str, Fetcher]:
+    """ENTSO-E prices, load forecast and wind/solar forecasts (requires an API key)."""
+    return {
+        "entsoe_price": client.day_ahead_prices,
+        "entsoe_load_forecast": client.load_forecast,
+        "entsoe_wind_solar_forecast": client.wind_solar_forecast,
+    }
+
+
 def build_dataset(
     start: pd.Timestamp,
     end: pd.Timestamp,
-    entsoe: EntsoeClient,
+    sources: dict[str, Fetcher],
     *,
-    weather_source: str | None = "reanalysis",
+    weather_source: str | None = "forecast",
     cache_dir: Path | None = None,
 ) -> pd.DataFrame:
-    """Hourly dataset on ``[start, end)``: price, ENTSO-E forecasts and optional weather."""
-    sources: dict[str, Fetcher] = {
-        "price": entsoe.day_ahead_prices,
-        "load_forecast": entsoe.load_forecast,
-        "wind_solar_forecast": entsoe.wind_solar_forecast,
-    }
+    """Hourly dataset on ``[start, end)`` from the given sources plus optional weather.
+
+    Source names are used as cache keys, so each provider gets its own cache directory.
+    """
+    sources = dict(sources)
     if weather_source is not None:
         sources[f"weather_{weather_source}"] = lambda s, e: fetch_weather(s, e, weather_source)
 
